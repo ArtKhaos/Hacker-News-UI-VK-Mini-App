@@ -1,10 +1,10 @@
 {
   "name": "hacker_news_ui",
-  "private": true,
-  "version": "0.0.0",
+  "private": false,
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "vite",
+    "start": "yarn install && vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
@@ -20,6 +20,7 @@
     "@vkontakte/vk-mini-apps-router": "^1.4.2",
     "@vkontakte/vkui": "^6.0.0",
     "@vkontakte/vkui-tokens": "^4.45.0",
+    "express": "^4.19.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
@@ -40,5 +41,10 @@
     "terser": "^5.4.0",
     "typescript": "^5.2.2",
     "vite": "^5.0.8"
-  }
+  },
+  "description": "Тестовое задание для стажировки на направление \"Фронтенд-Разработчик\"",
+  "main": "index.js",
+  "repository": "https://github.com/ArtKhaos/Hacker-News-UI-VK-Mini-App.git",
+  "author": "Vladimir <ynkin51@gmail.com>",
+  "license": "MIT"
 }
