@@ -1,44 +1,31 @@
-import {FC, useEffect, useState} from "react";
+import { FC } from "react";
 import {
     Panel,
     PanelHeader,
     List,
-    Group,
     Button,
     Div,
-    NavIdProps,
-    SplitCol,
-    SplitLayout,
     Title,
     Text
 } from '@vkontakte/vkui';
-import {newsType} from "../types.ts";
-import {getNews} from "../api/getNews.ts";
+import { newsType } from "../types";
+import { getNews } from "../api/getNews";
 
-export const Home: FC<NavIdProps> = ({id}) => {
-    const [news, setNews] = useState<newsType[]>([]);
-    const [error, setError] = useState<string>('');
+type HomeProps = {
+    id: string;
+    go: (path: string) => void;
+    news: newsType[];
+    setNews: (news: newsType[]) => void;
+    error: string;
+    setError: (err: string) => void;
+}
 
-    useEffect(() => {
-        const fetchNews = async () => {
-            try {
-                const fetchedNews = await getNews();
-                setNews(fetchedNews.sort((a, b) => b.date.getTime() - a.date.getTime()));
-            } catch (error) {
-                setError('Ошибка загрузки новостей');
-            }
-        };
-
-        fetchNews();
-        const intervalId = setInterval(fetchNews, 60000); // Обновление каждую минуту
-
-        return () => clearInterval(intervalId); // Очистка интервала
-    }, []);
+export const Home: FC<HomeProps> = ({ id, go, news, setNews, error, setError }) => {
 
     const handleRefresh = async () => {
         try {
             const fetchedNews = await getNews();
-            setNews(fetchedNews.sort((a, b) => b.date.getTime() - a.date.getTime()));
+            setNews(fetchedNews.sort((a, b) => b.date.getTime() - a.date.getTime())); // Сортировка новостей по дате
         } catch (error) {
             setError('Ошибка при обновлении новостей');
         }
@@ -47,40 +34,33 @@ export const Home: FC<NavIdProps> = ({id}) => {
     return (
         <Panel id={id}>
             <PanelHeader>Главная страница</PanelHeader>
-            <Group>
+            <Div>
                 <Button stretched size="l" mode="secondary" onClick={handleRefresh}>
                     Обновить новости
                 </Button>
-            </Group>
-            <Group>
-                <Div>
-                    {error ? (
-                        <Div>{error}</Div>
-                    ) : (
-                        <List>
-                            {news.map((newsItem) => (
-                                <Div key={newsItem.id}
-                                     onClick={() => console.log('Переход на страницу новости', newsItem.id)}>
-                                    <SplitLayout>
-                                        <SplitCol>
-                                            <Div>
-                                                <Title level="2">{newsItem.title}</Title>
-                                                <Text>by {newsItem.authorNick}</Text>
-                                            </Div>
-                                        </SplitCol>
-                                        <SplitCol>
-                                            <Div style={{textAlign:'right'}}>
-                                                <Text>rating: {newsItem.rating}</Text>
-                                                <Text>date: {newsItem.date.toLocaleDateString().split('/').join('.')}</Text>
-                                            </Div>
-                                        </SplitCol>
-                                    </SplitLayout>
-                                </Div>
-                            ))}
-                        </List>
-                    )}
-                </Div>
-            </Group>
+            </Div>
+            {error ? (
+                <Div>{error}</Div>
+            ) : (
+                <List>
+                    {news.map((newsItem) => (
+                        <Div
+                            key={newsItem.id}
+                            style={{ display: 'flex', cursor: 'pointer' }}
+                            onClick={() => go(`/news/${newsItem.id}`)}
+                        >
+                            <div style={{ flexGrow: 1 }}>
+                                <Title level="2">{newsItem.title}</Title>
+                                <Text>от {newsItem.authorNick}</Text>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                <Text style={{textWrap:'nowrap'}}>рейтинг: {newsItem.rating}</Text>
+                                <Text>{newsItem.date.toLocaleDateString().split('/').join('.')}</Text>
+                            </div>
+                        </Div>
+                    ))}
+                </List>
+            )}
         </Panel>
     );
 };

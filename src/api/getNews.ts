@@ -1,43 +1,42 @@
-import {newsType} from "../types.ts";
+import { commentType, newsType } from "../types";
 
-async function getNewsIDs():Promise<number[]> {
-    const newStories = 'https://hacker-news.firebaseio.com/v0/newstories.json';
+const BASE_URL = 'https://hacker-news.firebaseio.com/v0';
 
+async function fetchData(url: string): Promise<any> {
     try {
-        const response = await fetch(newStories);
+        const response = await fetch(`${BASE_URL}/${url}`);
         if (!response.ok) {
-            throw new Error('Ответ сети не в порядке');
+            throw new Error('Ответ не в порядке');
         }
-        const IDs: number[] = await response.json() as number[];
-
-        return IDs;
-
+        return await response.json();
     } catch (error) {
-        console.error("Ошибка получения новостей: ", error);
+        console.error(`Ошибка загрузки данных: ${error}`);
         throw error;
     }
 }
 
+async function getNewsIDs(): Promise<number[]> {
+    const newsIDs = await fetchData('newstories.json');
+    return newsIDs || [];
+}
+
+export async function getComments(IDs: number[]): Promise<commentType[]> {
+    const commentPromises = IDs.map(id => fetchData(`item/${id}.json`));
+    const comments = await Promise.all(commentPromises);
+    return comments.filter((item): item is commentType => item !== null);
+}
+
+export async function getComment(id: number): Promise<commentType | null> {
+    return await fetchData(`item/${id}.json`);
+}
+
 export async function getNews() {
     const IDs = await getNewsIDs();
-
-    const newsPromises = IDs.slice(0, 100).map(id =>
-        fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Ответ не в порядке');
-                }
-                return response.json();
-            })
-            .then(apiResponse => transformApiResponseToNewsType(apiResponse))
-            .catch(error => {
-                console.error('Ошибка загрузки новости:', error);
-                return null;
-            })
-    );
-
+    const newsPromises = IDs.slice(0, 100).map(id => fetchData(`item/${id}.json`));
     const news = await Promise.all(newsPromises);
-    return news.filter(item => item !== null); // Фильтруем неудачные запросы
+    return news
+        .filter((item): item is newsType => item !== null)
+        .map(transformApiResponseToNewsType);
 }
 
 function transformApiResponseToNewsType(apiResponse: any): newsType {
@@ -46,6 +45,14 @@ function transformApiResponseToNewsType(apiResponse: any): newsType {
         title: apiResponse.title,
         rating: apiResponse.score,
         authorNick: apiResponse.by,
-        date: new Date(apiResponse.time * 1000) // Преобразование Unix timestamp в объект Date
+        date: new Date(apiResponse.time * 1000),
+        url: apiResponse.url,
+        kids: apiResponse.kids,
+        descendants: apiResponse.descendants
     };
+}
+
+export async function getNewsDetails(id: number): Promise<newsType | null> {
+    const newsDetails = await fetchData(`item/${id}.json`);
+    return newsDetails ? transformApiResponseToNewsType(newsDetails) : null;
 }
